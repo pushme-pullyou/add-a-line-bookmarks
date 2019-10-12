@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<meta name = "description" content = "Basic bookmark manager" >
+<meta name = "keywords" content = "JavaScript,GitHub,FOSS" >
+<meta name = "date" content = "2019-04-20" >
+<title>Add-a-Line Bookmarks</title>
+<link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet" >
+<style>
+
+* { box-sizing: border-box; }
+
+:root { --mnu-width: 22rem; --screen-width: calc( 100vw ); }
+
+html { height: 100%; }
+
+body {background-color: #ffffff; color: #555; font-family: 'inconsolata'; font-size: 15px; height: 100%;
+	line-height: 18px; margin: 0px; overflow: hidden; }
+
+h1 { margin-top: 30px; margin-bottom: 5px; font-size: 25px; font-weight: normal; }
+
+h2 { font-size: 20px; font-weight: normal; }
+
+a { color: #2194CE; text-decoration: none; }
+
+blockquote, pre { background-color: #eee; padding: 10px; }
+
+button, input[ type=button ], input[ type = file ] { background-color: #ddd; border: 1px solid #ccc; border-radius: 2px;
+	color: #322; cursor: pointer; outline: none; padding: 3px 5px; }
+
+button:hover, input[ type=button ]:hover{ background: #ccc;
+	box-shadow: 5px 5px 5px rgba(0,0,0,0.3); color: #f00 }
+
+iframe { height: 200rem;  width: 80rem; }
+
+input[ type = range ] { -webkit-appearance: none; -moz-appearance: none; background-color: #ddd; width: 90%; }
+input[ type = range ]::-moz-range-thumb { background-color: rgb(228, 225, 225); border-radius: 0; width: 10px; }
+input[ type = range ]::-webkit-slider-thumb { -webkit-appearance: none; background-color: #888; height: 20px; width: 10px; }
+
+main { position: absolute; border: 0px; left: var( --mnu-width ); width: calc(100% - var( --mnu-width ) ); height: 100%;
+	margin: 0; overflow: auto; }
+
+summary { cursor: pointer; font-size:1rem; font-weight: bold; }
+
+textarea { width: 100%; resize: both; }
+
+
+
+#butViewSource { position: fixed; bottom: 20px; right: 20px; padding: 8px; color: #fff;
+	background-color: #555; opacity: 0.7; }
+
+#butViewSource:hover { cursor: pointer; opacity: 1; }
+
+
+#divContents { border: 0px solid red; height: 100%; margin: 0 auto; max-width: 50rem; }
+
+#divDrop {border: 1px solid #aaaaaa;height: 70px; padding: 10px;	width: 100%; }
+
+#divIframe { background-color: #f1f1f1; border: 1px solid #d3d3d3; position: absolute;
+	right: 1rem; top: 2rem; }
+
+#mydivheader {
+  padding: 10px;
+  cursor: move;
+  z-index: 10;
+  background-color: #2196F3;
+  color: #fff;
+}
+
+#navPanel { background: #fafafa; height: 100%; left: 0px; overflow: auto; position: fixed; width: var( --mnu-width ); }
+
+#navPanel header, #navPanel section { padding: 0px 8px 20px 20px; }
+
+#navPanel #secContent a { color: #2194CE; text-decoration: none; cursor: pointer; }
+
+#navPanel #secContent a:hover { text-decoration: underline; }
+
+#navPanel #secContent a:active, #navPanel #secContent a:focus { color: #ff0000; }
+
+#navPopup { background-color: #eee; border: 1px solid #aaa;  border-radius: 8px; max-height: 90%;
+	opacity: 0.95;  overflow: auto; padding: 0 1rem 1rem 1rem; z-index: 100;
+	left: 50%; margin-right: -50%; position: absolute; top: 40%; transform: translate(-50%, -40%);
+	box-shadow: 10px 10px 25px rgba(0,0,0,0.3), 6px 6px 6px rgba(0,0,0,0.5); }
+
+
+/* https://medium.com/@jamesfuthey/simulating-the-creation-of-website-thumbnail-screenshots-using-iframes-7145269891db
+https://jes.al/2015/03/website-thumbnail-previews-iframe/ */
+
+.thumbnail { position: relative;-ms-zoom: 0.25;-moz-transform: scale(0.25);-moz-transform-origin: 0 0;
+	-o-transform: scale(0.25); -o-transform-origin: 0 0;-webkit-transform: scale( 0.25 );-webkit-transform-origin: 0 0; }
+
+.thumbnail:after { content: ""; display: block; position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+
+.thumbnail-container { width: 330px; height: 240px; display: inline-block;
+	overflow: hidden; position: relative; }
+
+.full-width { width: 100%; }
+.set-width { width: 18rem; }
+.set-inp {float: right; width: 12rem; }
+
+/* https://stackoverflow.com/questions/20300138/is-it-possible-to-add-placeholder-in-div-tag */
+
+[contentEditable=true]:empty:not(:focus):before{ content:attr(data-text) }
+
+
+/* mobile */
+
+#expandButton { display: none; height: 32px; position: absolute; right: 50px; top: 12px; width: 32px; }
+
+@media all and ( max-width: 640px ) {
+
+	h1 { margin-top: 20px; margin-bottom: 20px; }
+
+	#navPanel { border-bottom: 1px solid #dedede; max-height: 480px; left: 0; overflow: hidden;
+		position: absolute; right: 0; top: 0; width: 100%; z-index: 100; }
+
+	#navPanel.collapsed { height: 56px; }
+
+	#expandButton { display: block; }
+
+	#secContent { position: absolute; left: 0; top: 90px; right: 0; bottom: 0; font-size: 17px;
+	line-height: 22px; overflow: auto; }
+
+	main { height: calc(100% - 56px); padding: 0 1rem; position: absolute; left: 0; top: 56px; width: 100%;  }
+
+}
+
+.flex-container {
+	display: flex;
+	flex-wrap: wrap;
+	background-color: DodgerBlue;
+}
+
+
+.flex-container > div {
+	background-color: #f1f1f1;
+	/* width: 22rem; */
+
+	margin: 5px; padding: 5px;
+
+}
+
+/*
+.flex-container > div > input { display: inline-block;
+	color:red; float: right; width: 17rem;
+
+}
+*/
+
+
+.flex-container2 {
+	display: flex;
+	flex-wrap: wrap;
+	background-color: DodgerBlue;
+}
+
+.flex-container2 > div {
+	background-color: #f1f1f1;
+	width: 12rem;
+	margin: 5px;
+	padding: 5px;
+
+}
+</style>
+</head>
+<body>
+<script src = "https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.0/showdown.min.js" ></script>
+<script src = "fm-file-manage.js" ></script>
+<script src = "ba-bookmark-add.js" ></script>
+<script src = "cm-content-manage.js" ></script>
+<script src = "blbf-bookmarks-list-by-find.js" ></script>
+
+
+	<nav id="navPanel">
+
+		<header>
+
+			<h1>
+				<a href="https://github.com/pushme-pullyou-tootoo13/tree/master/sandbox/template-html/template-html.html" title="Source on GitHub" >
+					<img src="https://pushme-pullyou.github.io/github-mark-64.png" style=height:1rem;opacity:0.8; ></a>
+				<a href="" title="Click to reload this page" >
+					<script> document.write( document.title ); </script>
+				</a>
+				<button id=butId onclick="setPopupShowHide(butId,'README.md');" style=float:right; >?</button>
+			</h1>
+
+			<section><i>
+				<script> document.write( document.head.querySelector( "[ name=description ]" ).content ); </script>
+			</i></section>
+
+			<button id="expandButton" onclick=navPanel.classList.toggle('collapsed'); >☰</button>
+
+		</header>
+
+
+		<section id="secContent" >
+
+			<details open>
+
+				<summary>Test 1
+					<button id=butTest1 onclick="setPopupShowHide(butTest1,'Hello, World!');" style=float:right; >?</button>
+				</summary>
+
+				<p>
+					<input type=file id=inpFile onchange=FM.openFile(this); accept = '.json' >
+				</p>
+
+				<p><button onclick=divContents.innerHTML=tmpNewBookmark.innerHTML; >start new bookmark</button></p>
+
+				<p>
+					<button id=but onclick=FM.saveFile(); >save edits to file</button>
+				</p>
+
+				<!--
+
+					<button onclick=BA.bookmarkAddInit(); >add new bookmark </button>
+				<div ><button onclick=BLBS.setMenuHeaders(); >Bookmarks by source</button></div>
+
+				<div ><button >Bookmarks by host</button></div>
+
+				<div ><button onclick=setMenuItemsByUrl(FM.bookmarks); >Bookmarks list by find</button></div>
+				-->
+
+				<div id=menuItems ></div>
+
+			</details>
+
+
+			<footer>
+
+				<hr>
+
+				<h1 onclick=navPanel.scrollTop=0; style=cursor:pointer;text-align:center; title="go to top of menu" > ❦ </h1>
+
+			</footer>
+
+
+		</section>
+
+	</nav>
+
+	<nav>
+
+		<button id="butViewSource" target=_blank; hidden >view source</button>
+
+	</nav>
+
+	<nav id="navPopup" hidden >
+
+		<div id="divPopupData" ></div>
+
+		<div id="divMessage" ></div>
+
+	</nav>
+
+	<main>
+
+		<div id=divContents ></div>
+
+	</main>
+
+
+	<template id=tmpNewBookmark >
+
+		<h2>Add new bookmark</h2>
+
+		<div contentEditable=true id="divDrop"  data-text="Drag a URL into this area" ></div>
+
+		<p>
+			<button onclick=BA.onInput(); >reset data</button>
+
+			<button onclick=BA.addTest(0); >add goog</button>
+			<button onclick=BA.addTest(1); >add wiki</button>
+
+			<button onclick=BA.getDescription(); title="wait until iframe appears before clicking here" >get description</button>
+
+<!--
+
+	<button onclick=FM.requestFile("${FM.urlCORS + bookmark.url}",parseHtmlGetDescription); title="wait until iframe appears before clicking here" >get description</button>
+
+-->
+
+
+		</p>
+
+		<div class="flex-container">
+
+			<div class=full-width >url: <input class=full-width id=inpUrl ></div>
+
+			<div class=full-width >name: <input class=full-width id=inpName ></div>
+
+
+			<div class=set-width >date add: <input class=set-inp id=inpDateAdd ></div>
+
+			<div class=set-width >update: <input class=set-inp id=inpDateUpdate ></div>
+
+			<div class=set-width >id: <input class=set-inp id=inpId ></div>
+
+			<div class=set-width >type: <input class=set-inp id=inpType ></div>
+
+			<div class=full-width >images: <input class=full-width id=inpImages ></div>
+
+			<div class=full-width >tags: <input class=full-width id=inpTags ></div>
+
+			<div class=full-width >description: <textarea class=full-width id=txtDescription ></textarea></div>
+
+		</div>
+
+		<div class="flex-container2">
+			<div>source<br>
+				<select id=selSource size=9 style=width:10rem; >
+					<option>Academia</option>
+					<option>Community</option>
+					<option>Organization</option>
+					<option>Person</option>
+					<option>Publisher</option>
+					<option>Reference</option>
+					<option>Vendor</option>
+					<option>Wikipedia</option>
+					<option>Other</option>
+				</select>
+			</div>
+
+
+			<div>status:<br>
+
+				<select id=selStatus size=8 style=width:10rem; >
+					<option>iframe-ok</option>
+					<option>noframe</option>
+					<option>dead</option>
+					<option>stale</option>
+					<option></option>
+					<option></option>
+					<option></option>
+					<option>Other</option>
+				</select>
+			</div>
+
+			<div>tags:<br>
+				<!--
+				<input list="tags" name="tags" autocomplete="off" style=width:10rem; onchange=BA.addTag(this) >
+				<datalist id="tags">
+					<option value="Software">
+					<option value="Open-source">
+					<option value="Architecture">
+					<option value="CAD">
+					<option value="3D">
+				</datalist>
+				-->
+
+				<input type=search id=inpTag name="q" oninput=filterTags(this); onchange=console.log(this);>
+
+				<button id=butAddNewTag onclick=addToList() disabled >add to list of tags</button>
+
+				<select id=selTag onchange=addTag(this.value); size=10 style=width:10rem ></select>
+
+			</div>
+
+		</div>
+
+
+		<p>
+			<button onclick=BA.bookmarkAddUpdateTextarea() >update bookmark JSON</button>
+			<button onclick=BA.bookmarkAdd(); >add bookmark JSON to bookmarks </button>
+
+		</p>
+
+			Bookmark JSON data:<br>
+			<textarea id=BAtxtBookmark style=height:12rem;width:100%; ></textarea>
+		<p>
+
+		<div id=divIframe class="thumbnail-container" draggable="true" >
+
+			<div id="divIframeHeader">Click here to move</div>
+
+			<div class="thumbnail" >
+				<iframe id=ifr ></iframe>
+			</div>
+
+		</div>
+
+	</template>
+
+<script>
+
+
+let popupId;
+
+init();
+
+
+function init() {
+
+	if ( /(iPad|iPhone|iPod)/g.test( navigator.userAgent ) ) { /* I hate having to add this */
+
+		divContents.style.width = getComputedStyle( divContents ).width;
+		divContents.style.height = getComputedStyle( divContents ).height;
+		divContents.setAttribute( 'scrolling', 'no' );
+
+	}
+
+	FM.requestFile( CM.urlJson, CM.parseFile );
+
+	divContents.innerHTML = tmpNewBookmark.innerHTML;
+
+}
+
+
+
+function setPopupShowHide( id, text ) {
+	//console.log( 'id', id );
+
+	popupId = id;
+
+	popupId.classList.toggle( "active" );
+
+	if ( popupId.classList.contains( 'active' ) ) {
+
+		navPopup.hidden = false;
+
+		if ( text.toLowerCase().endsWith( ".md" ) ) { requestFile( text, divPopupData ); }
+
+		const htm =
+			`
+				<div style=text-align:right; ><button onclick=setPopupShowHide(popupId,""); >×</button></div>
+				${ text }
+			`;
+		divPopupData.innerHTML = popupId.classList.contains( 'active' ) ? htm : '';
+
+		divContents.addEventListener( 'click', onClickContainer, false );
+		divContents.addEventListener( 'touchstart', onClickContainer, false );
+
+	} else {
+
+		onClickContainer();
+
+	}
+
+}
+
+
+
+function onClickContainer() {
+
+	navPopup.hidden = true;
+	popupId.classList.remove( "active" );
+	divPopupData.innerHTML = "";
+	divContents.removeEventListener( 'click', onClickContainer, false );
+	divContents.removeEventListener( 'touchstart', onClickContainer, false );
+
+}
+
+
+
+function requestFile( url, target ) {
+
+	const xhr = new XMLHttpRequest();
+	xhr.open( 'GET', url, true );
+	xhr.onerror = ( xhr ) => console.log( 'error:', xhr  );
+	xhr.onprogress = ( xhr ) => console.log( 'loaded', xhr.loaded );
+	xhr.onload = ( xhr ) => callbackMarkdown( xhr.target.response, target );
+	xhr.send( null );
+
+};
+
+
+
+function callbackMarkdown( markdown, target ) {
+	//console.log( '', markdown );
+
+	showdown.setFlavor('github');
+	const converter = new showdown.Converter();
+	const html = converter.makeHtml( markdown );
+
+	target.innerHTML = html;
+	//console.log( '', html );
+
+	window.scrollTo( 0, 0 );
+
+};
+
+
+//////////
+tags = [
+
+	"2d", "3d", "api", "architecture", "assembly", "association", "bim", "building",
+	"cad", "collaboration", "component", "configure", "consultant",
+	"design", "designer", "developer", "diy", "education", "engineering", "environment", "fabricate", "gallery", "gbxml","hardware",
+	"ifc", "interactive", "justice",
+	"landscape", "lego", "modular", "mvp", "news", "online",
+	 "open-source", "parametric design", "performance", "planning", "printing",
+	 "rendering", "reference", "repository", "research", "robotics",
+	 "schema", "science", "service", "software", "space", "standards", "structure", "sustainability", "system",
+	 "tools", "urban", "visualization"
+];
+
+
+let options = tags.map ( tag => `<option>${ tag }</option>` );
+
+selTag.innerHTML = options;
+
+
+function filterTags( input ) {
+
+	const str = input.value;
+	//console.log( 'str', str );
+
+	tagsFiltered = [];
+
+	if ( str === "" ) {
+
+		tagsFiltered = tags.slice();
+
+	} else {
+
+		tagsFiltered = tags.filter( tag => tag.includes( str ) );
+
+	}
+
+	if ( tagsFiltered.length === 0 && str.length > 0 ) {
+
+		butAddNewTag.disabled = false;
+
+	}
+
+	const options = tagsFiltered.map ( tag => `<option>${ tag }</option>` );
+
+	selTag.innerHTML = options;
+
+}
+
+
+
+function addTag ( text ) {
+
+	inpTags.value += `"${ text }",`;
+
+}
+
+
+function addToListTag () {
+
+ 	tag = inpTag.value.toLowerCase();
+
+	if ( tags.includes( tag ) === false ) {
+
+		tags.push( tag );
+
+		tags = [ ...new Set( tags ) ].sort();
+
+		console.log( 'tags', tags );
+
+	} else {
+
+		alert( 'tag exists already' );
+	}
+
+}
+
+
+
+//Make the DIV element draggagle:
+dragElement(document.getElementById("divIframe"));
+
+	function dragElement(elmnt) {
+	var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+	if (document.getElementById(elmnt.id + "header")) {
+		/* if present, the header is where you move the DIV from:*/
+		document.getElementById(elmnt.id + "header").onmousedown = dragMouseDown;
+	} else {
+		/* otherwise, move the DIV from anywhere inside the DIV:*/
+		elmnt.onmousedown = dragMouseDown;
+	}
+
+	function dragMouseDown(e) {
+		e = e || window.event;
+		e.preventDefault();
+		// get the mouse cursor position at startup:
+		pos3 = e.clientX;
+		pos4 = e.clientY;
+		document.onmouseup = closeDragElement;
+		// call a function whenever the cursor moves:
+		document.onmousemove = elementDrag;
+	}
+
+	function elementDrag(e) {
+		e = e || window.event;
+		e.preventDefault();
+		// calculate the new cursor position:
+		pos1 = pos3 - e.clientX;
+		pos2 = pos4 - e.clientY;
+		pos3 = e.clientX;
+		pos4 = e.clientY;
+		// set the element's new position:
+		elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+		elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+	}
+
+	function closeDragElement() {
+		/* stop moving when mouse button is released:*/
+		document.onmouseup = null;
+		document.onmousemove = null;
+	}
+	}
+</script>
+</body>
+</html>
