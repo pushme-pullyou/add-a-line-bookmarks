@@ -6,8 +6,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="description" content="Basic bookmark manager and editor with tagging, descriptions and comments">
 	<meta name="keywords" content="JavaScript,GitHub,FOSS">
-	<meta name="date" content="2019-09-28">
-	<meta name="version" content="0.05.06">
+	<meta name="date" content="2019-10-12">
+	<meta name="version" content="0.05.07">
 	<title></title>
 	<style>
 		* {
@@ -164,11 +164,16 @@
 
 		#BEDdivDrop { border: 1px dotted #aaaaaa; height: 3rem; padding: 1rem; width: 100%; }
 
+
+		.FFPinput { width: 100%; }
+
 	</style>
 </head>
 
 <body>
 <script src="foj-file-open-json/v-0-00/foj-file-open-json.js" ></script>
+<script src="ffp-file-fetch-put/v-0-00/ffp-file-fetch-put.js" ></script>
+
 <script src="bop-bookmark-onload-parse/v-0-00/bop-bookmark-onload-parse.js" ></script>
 
 <script src = "js/bed-bookmark-edit-dialog.js" ></script>
@@ -178,7 +183,6 @@
 <script src = "js-menu/mbt-menu-bookmarks-tag.js" ></script>
 <script src = "js-menu/mfo-menu-file-order.js" ></script>
 <script src = "js-menu/mjl-menu-json-lines.js" ></script>
-
 
 
 <script src = "js/bme-bookmarks-edit.js" ></script>
@@ -200,6 +204,7 @@
 
 		<div id=divMenu>
 
+			<div id=FFPgetMenuFetchPut > </div>
 
 			<details open >
 
@@ -252,7 +257,7 @@
 
 		<hr>
 
-		<h1 onclick="navPanel.scrollTop=0;" style="color:#888; cursor:pointer; text-align:center;"
+		<h1 onclick="navMenu.scrollTop=0;" style="color:#888; cursor:pointer; text-align:center;"
 			title="go to top of menu">
 			❦
 		</h1>
@@ -283,11 +288,12 @@
 
 	<script>
 
-		//const url = "https://opentecture.github.io/mindmapping/sandbox/opentecture-bookmarks/bookmarks.json";
-		const url = "../../bookmarks.json";
+		//const url = "https://pushme-pullyou.github.io/add-a-line-bookmarks/bookmarks.json";
+		const url = "https://api.github.com/repos/pushme-pullyou/pushme-pullyou.github.io/add-a-line-bookmarks/bookmarks.json";
+		//const url = "../../bookmarks.json";
 
-		const urlSourceCode = "https://github.com/opentecture/mindmapping/tree/master/sandbox/opentecture-bookmarks/add-a-line-bookmarks";
-		const urlSourceCodeIcon = "https://pushme-pullyou.github.io/github-mark-64.png";
+		const urlSourceCode = "https://github.com/pushme-pullyou/add-a-line-bookmarks";
+		const urlSourceCodeIcon = "https://pushme-pullyou.github.io/github-mark-32.png";
 
 		init();
 
@@ -295,7 +301,9 @@
 
 			divTitle.innerHTML = getTitle();
 
-			MSEdivMenuSearch.innerHTML = MSE.getMenuSearch()
+			MSEdivMenuSearch.innerHTML = MSE.getMenuSearch();
+
+			FFPgetMenuFetchPut.innerHTML = FFP.getMenu();
 
 			MBDdivMenuBookmarksDomain.innerHTML = MBD.getMenuBookmarksDomain();
 
@@ -323,12 +331,17 @@
 
 			TAGdivGetMenuTagSets.innerHTML = TAG.getMenuTagSets();
 
-			document.body.addEventListener( 'FOJonJsonParse', () => {
-				console.log( 'FOJ loaded', FOJ.fileName )
-				BOP.onLoadParse( FOJ.jsonLines )
+			// document.body.addEventListener( 'FOJonJsonParse', () => {
+			// 	console.log( 'FOJ loaded', FOJ.fileName )
+			// 	BOP.onLoadParse( FOJ.jsonLines )
+			// }, false );
+
+			document.body.addEventListener( 'FFPonJsonParse', () => {
+				console.log( 'FFP.jsonLines loaded', FFP.fileName )
+				BOP.onLoadParse( FFP.jsonLines )
 			}, false );
 
-			FOJ.requestFile( url );
+			FFP.fetchJsonLines();
 
 			if ( window.innerWidth < 640 || window.innerHeight < 640 ) {
 				toggleNavPanel();

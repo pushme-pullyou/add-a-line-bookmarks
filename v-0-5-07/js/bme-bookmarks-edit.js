@@ -38,7 +38,9 @@ BME.getMenuBookmarkEdit = function() {
 			<p>
 				or <button onclick=BME.setJsonDelete(); >Delete bookmark JSON in memory</button>
 			</p>
-				<button onclick=BOP.butSaveFile(); >Save edits to file</button> <span id=spnMessage ></span>
+				<button onclick=BOP.butSaveFile(); >Save edits to local file</button> <span id=spnMessage ></span>
+
+				<button onclick=FFP.putJsonLines(); >Save edits to GitHub</button> <span id=spnMessage ></span>
 			<p>
 				<textarea id=BMEtxtJson style=height:20rem; ></textarea>
 			</p>
